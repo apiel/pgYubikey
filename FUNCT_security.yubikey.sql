@@ -32,7 +32,7 @@ BEGIN
 		EXECUTE 'SELECT x''' || substr(v_plain_text, 21, 2) || substr(v_plain_text, 19, 2) || substr(v_plain_text, 17, 2) || '''::int' INTO v_time;
 		RAISE NOTICE 'Internal time %', v_time;
 		SELECT INTO v_res ybk.id_ybk FROM security.yubikey_ybk ybk WHERE ybk.public_ybk = v_public 
-			AND ybk.internal_ybk = v_internal AND ybk.counter_ybk < v_counter AND ybk.time_ybk < v_time;
+			AND ybk.internal_ybk = v_internal AND ybk.counter_ybk < v_counter; -- AND ybk.time_ybk < v_time;
 		IF v_res IS NULL
 		THEN
 			v_res = -2; -- otp invalid (here we could also try to find out if the keys was (-3)reused or (-4)timeout)
