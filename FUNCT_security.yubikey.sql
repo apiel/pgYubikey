@@ -8,7 +8,7 @@ DECLARE
    v_plain_text varchar;
    v_internal varchar;
    v_counter int;
-   v_time int;
+   -- v_time int;
 BEGIN
 	v_res = -1; -- public key invalid
 	v_public = substr(v_otp, 1, 12);
@@ -29,15 +29,16 @@ BEGIN
 		RAISE NOTICE 'Internal key %', v_internal;
 		EXECUTE 'SELECT x''' || substr(v_plain_text, 15, 2) || substr(v_plain_text, 13, 2) || '''::int' INTO v_counter;
 		RAISE NOTICE 'Internal counter %', v_counter;
-		EXECUTE 'SELECT x''' || substr(v_plain_text, 21, 2) || substr(v_plain_text, 19, 2) || substr(v_plain_text, 17, 2) || '''::int' INTO v_time;
-		RAISE NOTICE 'Internal time %', v_time;
+		-- EXECUTE 'SELECT x''' || substr(v_plain_text, 21, 2) || substr(v_plain_text, 19, 2) || substr(v_plain_text, 17, 2) || '''::int' INTO v_time;
+		-- RAISE NOTICE 'Internal time %', v_time;
 		SELECT INTO v_res ybk.id_ybk FROM security.yubikey_ybk ybk WHERE ybk.public_ybk = v_public 
-			AND ybk.internal_ybk = v_internal AND ybk.counter_ybk < v_counter; -- AND ybk.time_ybk < v_time;
+			AND ybk.internal_ybk = v_internal AND ybk.counter_ybk < v_counter; -- AND ybk.time_ybk < v_time; <--wrong because session time...
 		IF v_res IS NULL
 		THEN
 			v_res = -2; -- otp invalid (here we could also try to find out if the keys was (-3)reused or (-4)timeout)
 		ELSE
-			UPDATE security.yubikey_ybk SET counter_ybk = v_counter, time_ybk = v_time WHERE id_ybk = v_res;
+			-- UPDATE security.yubikey_ybk SET counter_ybk = v_counter, time_ybk = v_time WHERE id_ybk = v_res;
+			UPDATE security.yubikey_ybk SET counter_ybk = v_counter WHERE id_ybk = v_res;
 		END IF;
 		RAISE NOTICE 'Result %', v_res;
 	END IF;
@@ -47,4 +48,4 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE;
   
--- select security.yubikey('vvblnvjntvjriklniblddghcbrhuclurlnvvinukedih');
+-- select security.yubikey('vvkkefrufhjhfdfvhldvnrbveuckujvgrubgttgutddt');
