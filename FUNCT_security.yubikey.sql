@@ -27,7 +27,7 @@ BEGIN
 		RAISE NOTICE 'Plain text %', v_plain_text;
 		v_internal = substr(v_plain_text, 1, 12);
 		RAISE NOTICE 'Internal key %', v_internal;
-		v_counter = CAST(substr(v_plain_text, 15, 2) || substr(v_plain_text, 13, 2) AS int);
+		EXECUTE 'SELECT x''' || substr(v_plain_text, 15, 2) || substr(v_plain_text, 13, 2) || '''::int' INTO v_counter;
 		RAISE NOTICE 'Internal counter %', v_counter;
 		EXECUTE 'SELECT x''' || substr(v_plain_text, 21, 2) || substr(v_plain_text, 19, 2) || substr(v_plain_text, 17, 2) || '''::int' INTO v_time;
 		RAISE NOTICE 'Internal time %', v_time;
@@ -47,4 +47,4 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE;
   
- -- select security.yubikey('vvblnvjntvjriklniblddghcbrhuclurlnvvinukedih');
+select security.yubikey('vvblnvjntvjriklniblddghcbrhuclurlnvvinukedih');
