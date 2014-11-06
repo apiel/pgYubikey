@@ -47,4 +47,4 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE;
   
-select security.yubikey('vvblnvjntvjriklniblddghcbrhuclurlnvvinukedih');
+ -- select security.yubikey('vvblnvjntvjriklniblddghcbrhuclurlnvvinukedih');
