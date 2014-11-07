@@ -25,20 +25,26 @@ BEGIN
 		RAISE NOTICE 'Encrypted text (hex) %', v_encrypted_text;
 		SELECT INTO v_plain_text encode(decrypt(CAST('\x' || v_encrypted_text AS bytea), CAST('\x' || v_aes AS bytea), 'aes-ecb'), 'hex');
 		RAISE NOTICE 'Plain text %', v_plain_text;
-		v_internal = substr(v_plain_text, 1, 12);
-		RAISE NOTICE 'Internal key %', v_internal;
-		EXECUTE 'SELECT x''' || substr(v_plain_text, 15, 2) || substr(v_plain_text, 13, 2) || '''::int * 1000 + x''' || substr(v_plain_text, 23, 2) || '''::int' INTO v_counter;
-		RAISE NOTICE 'Internal counter %', v_counter;
-		EXECUTE 'SELECT x''' || substr(v_plain_text, 21, 2) || substr(v_plain_text, 19, 2) || substr(v_plain_text, 17, 2) || '''::int' INTO v_time;
-		RAISE NOTICE 'Internal time %', v_time;
-		SELECT INTO v_res ybk.id_ybk FROM security.yubikey_ybk ybk WHERE ybk.public_ybk = v_public 
-			AND ybk.internal_ybk = v_internal AND ybk.counter_ybk < v_counter
-			AND (floor(ybk.counter_ybk*0.001)<floor(v_counter*0.001) OR ybk.time_ybk < v_time);
-		IF v_res IS NULL
+		IF security.yubikey_validate_crc(v_plain_text) = -1
 		THEN
-			v_res = -2; -- otp invalid (here we could also try to find out if the keys was (-3)reused or (-4)timeout)
+			RAISE NOTICE 'Invalid CRC';
+			v_res = -2;
 		ELSE
-			UPDATE security.yubikey_ybk SET counter_ybk = v_counter, time_ybk = v_time WHERE id_ybk = v_res;
+			v_internal = substr(v_plain_text, 1, 12);
+			RAISE NOTICE 'Internal key %', v_internal;
+			EXECUTE 'SELECT x''' || substr(v_plain_text, 15, 2) || substr(v_plain_text, 13, 2) || '''::int * 1000 + x''' || substr(v_plain_text, 23, 2) || '''::int' INTO v_counter;
+			RAISE NOTICE 'Internal counter %', v_counter;
+			EXECUTE 'SELECT x''' || substr(v_plain_text, 21, 2) || substr(v_plain_text, 19, 2) || substr(v_plain_text, 17, 2) || '''::int' INTO v_time;
+			RAISE NOTICE 'Internal time %', v_time;
+			SELECT INTO v_res ybk.id_ybk FROM security.yubikey_ybk ybk WHERE ybk.public_ybk = v_public 
+				AND ybk.internal_ybk = v_internal AND ybk.counter_ybk < v_counter
+				AND (floor(ybk.counter_ybk*0.001)<floor(v_counter*0.001) OR ybk.time_ybk < v_time);
+			IF v_res IS NULL
+			THEN
+				v_res = -3; -- otp invalid (here we could also try to find out if the keys was reused or timeout)
+			ELSE
+				UPDATE security.yubikey_ybk SET counter_ybk = v_counter, time_ybk = v_time WHERE id_ybk = v_res;
+			END IF;
 		END IF;
 		RAISE NOTICE 'Result %', v_res;
 	END IF;
